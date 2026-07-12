@@ -8,8 +8,23 @@ from auth import gerar_senha_temporaria, verificar_senha
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
+ROOT_HTML_PATH = BASE_DIR / "restaurante (1).html"
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
+
+
+def serve_frontend(path: str = "index.html"):
+    if path in {"", "index", "index.html"}:
+        if (FRONTEND_DIR / "index.html").exists():
+            return send_from_directory(FRONTEND_DIR, "index.html")
+        if ROOT_HTML_PATH.exists():
+            return ROOT_HTML_PATH.read_text(encoding="utf-8"), 200, {"Content-Type": "text/html; charset=utf-8"}
+        return jsonify({"erro": "Frontend não encontrado."}), 404
+
+    candidate = FRONTEND_DIR / path
+    if candidate.exists() and candidate.is_file():
+        return send_from_directory(FRONTEND_DIR, path)
+    return jsonify({"erro": "Arquivo não encontrado."}), 404
 
 
 def valid_email(email: str) -> bool:
@@ -18,12 +33,12 @@ def valid_email(email: str) -> bool:
 
 @app.route("/")
 def index():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    return serve_frontend()
 
 
 @app.route("/<path:path>")
 def static_files(path):
-    return send_from_directory(FRONTEND_DIR, path)
+    return serve_frontend(path)
 
 
 @app.post("/api/login")

@@ -1,4 +1,5 @@
 import re
+import webbrowser
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -195,8 +196,16 @@ def excluir_conta(email):
     return jsonify({"ok": True})
 
 
+def launch_browser(url: str = "http://127.0.0.1:5000") -> bool:
+    try:
+        return webbrowser.open(url)
+    except Exception:
+        return False
+
+
 if __name__ == "__main__":
     models.init_db()
     print("BRASA rodando em http://localhost:5000")
     print("Login vendedor: vendedor@gmail.com / 1234")
+    launch_browser("http://127.0.0.1:5000")
     app.run(host="0.0.0.0", port=5000, debug=False)

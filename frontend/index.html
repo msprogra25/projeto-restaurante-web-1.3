@@ -1,411 +1,56 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRASA — Peça já</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-<div id="file-protocol-warning" style="display:none;">
-  <div style="background:#5a2a1f;border-bottom:2px solid var(--ember);color:#ffe3d1;padding:12px 18px;font-size:.82rem;line-height:1.5;position:relative;">
-    <strong>⚠️ Você está abrindo este arquivo direto do computador (file://).</strong><br>
-    Por segurança, o navegador <strong>não deixa salvar nada de forma permanente</strong> nesse modo — cardápio, contas e adicionamentos funcionam só enquanto você não atualizar ou fechar a página. Para salvar de verdade: rode <code style="background:#00000030;padding:2px 6px;border-radius:5px;">python -m http.server 8000</code> na pasta do arquivo e acesse via <code style="background:#00000030;padding:2px 6px;border-radius:5px;">http://localhost:8000</code>, ou teste direto aqui dentro da conversa com o Claude.
-    <button onclick="document.getElementById('file-protocol-warning').style.display='none'" style="position:absolute;top:8px;right:12px;background:none;border:none;color:#ffe3d1;font-size:1.1rem;cursor:pointer;">✕</button>
+<html lang="en">
+ <head>
+  <meta charset="utf-8"/>
+  <link href="https://media.base44.com/images/public/6a56d59315f9c9e793396cff/6de813ec8_logo.png" rel="icon" type="image/svg+xml"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <link href="/manifest.json" rel="manifest"/>
+  <title>
+   Base44 APP
+  </title>
+  <script crossorigin="" src="/assets/index-DXspt51Z.js" type="module">
+  </script>
+  <link crossorigin="" href="/assets/index-DQIaDEna.css" rel="stylesheet"/>
+  <script type="module">
+   if (window.self === window.top) {
+  let lastPath = "";
+  function getPageNameFromPath(path) {
+    const segments = path.split("/").filter(Boolean);
+    return segments[0] || null;
+  }
+  function trackPageView() {
+    const path = window.location.pathname;
+    if (path === lastPath) return;
+    lastPath = path;
+    const pageName = getPageNameFromPath(path) || "home";
+    const appId = "6a56d59315f9c9e793396cff";
+    if (!appId) return;
+    fetch(`/api/app-logs/${appId}/log-user-in-app/${pageName}`, {
+      method: "POST",
+    }).catch(() => {});
+  }
+  const originalPushState = history.pushState.bind(history);
+  history.pushState = function (...args) {
+    originalPushState(...args);
+    trackPageView();
+  };
+  const originalReplaceState = history.replaceState.bind(history);
+  history.replaceState = function (...args) {
+    originalReplaceState(...args);
+    trackPageView();
+  };
+  window.addEventListener("popstate", trackPageView);
+  trackPageView();
+}
+  </script>
+  <meta content="yes" name="mobile-web-app-capable"/>
+  <meta content="black" name="apple-mobile-web-app-status-bar-style"/>
+  <meta content="Restaurante Pro" name="apple-mobile-web-app-title"/>
+  <script async="true" data-app-id="6a56d59315f9c9e793396cff" data-platform-url="https://app.base44.com" src="/static/js/badge.js">
+  </script>
+ </head>
+ <body>
+  <div id="root">
   </div>
-</div>
-
-<div class="role-bar">
-  <div class="brand"><span class="dot"></span> BRASA</div>
-  <div class="role-bar-right">
-    <div class="role-tabs">
-      <button data-role="cliente" class="active">🍽️ Cliente</button>
-      <button data-role="vendedor">🧑‍🍳 Vendedor</button>
-      <button data-role="motoqueiro">🏍️ Motoqueiro</button>
-    </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Alternar modo claro/escuro" aria-label="Alternar modo claro/escuro">
-      <span class="tt-knob" id="theme-toggle-knob">🌙</span>
-    </button>
-  </div>
-</div>
-<hr class="ember-divider">
-
-<!-- ============ CLIENTE ============ -->
-<div class="view active" id="view-cliente">
-  <div class="eyebrow">Cardápio de hoje</div>
-  <h1 class="hero-title">Comida de brasa, direto pra sua mesa.</h1>
-  <p class="hero-sub">Escolha os pratos, ajuste as opções (sem cebola, com cebola...) e monte seu pedido. Pague como preferir — Pix, dinheiro (com troco) ou cartão na entrega.</p>
-  <div class="chips" id="chips"></div>
-  <div class="menu-grid" id="menu-grid"></div>
-</div>
-
-<button class="cart-fab" id="cart-fab" onclick="openCart()">🛒 Carrinho <span class="badge" id="cart-badge">0</span></button>
-
-<div class="overlay" id="cart-overlay">
-  <div class="drawer">
-    <div class="drawer-head"><h3>Seu carrinho</h3><button class="close-x" onclick="closeOverlay('cart-overlay')">✕</button></div>
-    <div id="cart-lines"></div>
-    <div id="cart-summary"></div>
-    <button class="btn btn-add" id="go-checkout" onclick="openCheckout()" style="display:none;">Continuar para pagamento →</button>
-  </div>
-</div>
-
-<div class="overlay" id="checkout-overlay">
-  <div class="drawer">
-    <div class="drawer-head"><h3>Finalizar pedido</h3><button class="close-x" onclick="closeOverlay('checkout-overlay')">✕</button></div>
-    <label class="field-label">Seu nome</label>
-    <input class="field" id="in-nome" placeholder="Como podemos te chamar?" oninput="clearErr('co-nome-error')">
-    <div class="auth-error" id="co-nome-error"></div>
-    <label class="field-label">WhatsApp / Telefone</label>
-    <input class="field" id="in-telefone" placeholder="Ex: (11) 99999-9999" oninput="clearErr('co-tel-error')">
-    <div class="auth-error" id="co-tel-error"></div>
-    <label class="field-label">Endereço de entrega</label>
-    <input class="field" id="in-endereco" placeholder="Rua, número, bairro" oninput="clearErr('co-end-error')">
-    <div class="auth-error" id="co-end-error"></div>
-    <label class="field-label">Forma de pagamento</label>
-    <div class="auth-error" id="co-pay-error"></div>
-    <div class="pay-options" id="pay-options">
-      <label class="pay-opt" data-val="pix"><input type="radio" name="pay" value="pix"><span class="icon">🔑</span> Pix</label>
-      <label class="pay-opt" data-val="dinheiro"><input type="radio" name="pay" value="dinheiro"><span class="icon">💵</span> Dinheiro</label>
-      <label class="pay-opt" data-val="cartao"><input type="radio" name="pay" value="cartao"><span class="icon">💳</span> Cartão (maquininha na entrega)</label>
-    </div>
-    <div id="pay-extra"></div>
-    <div class="subtotal-row"><span>Subtotal</span><span id="co-subtotal">R$ 0,00</span></div>
-    <div class="total-row"><span>Total</span><span id="co-total">R$ 0,00</span></div>
-    <button class="btn btn-add" onclick="submitOrder()">Confirmar pedido</button>
-  </div>
-</div>
-
-<div class="view" id="view-tracking">
-  <div class="track-card">
-    <div class="eyebrow">Pedido confirmado</div>
-    <h2 style="margin:0 0 4px;">Pedido <span id="track-id"></span></h2>
-    <p class="hero-sub" style="margin-bottom:6px;">Acompanhe o status em tempo real.</p>
-    <div class="status-steps" id="status-steps"></div>
-    <div id="track-details" style="font-size:.85rem;color:var(--cream-dim);line-height:1.7;"></div>
-    <!-- Botões de acompanhamento -->
-    <div id="track-actions" style="display:flex;flex-direction:column;gap:10px;margin-top:18px;"></div>
-    <button class="btn btn-ghost" style="margin-top:10px;" onclick="backToMenu()">← Voltar ao cardápio</button>
-  </div>
-</div>
-
-<!-- Item customization modal -->
-<div class="overlay center" id="item-overlay">
-  <div class="drawer centered">
-    <div class="drawer-head"><h3 id="im-title">Item</h3><button class="close-x" onclick="closeItemModal()">✕</button></div>
-    <div id="im-body"></div>
-  </div>
-</div>
-
-<!-- ============ VENDEDOR ============ -->
-<div class="view" id="view-vendedor">
-  <div id="vend-auth"></div>
-
-  <div id="vend-app" style="display:none;">
-    <div class="vend-header-row">
-      <div>
-        <div class="eyebrow">Painel do vendedor</div>
-        <h1 class="hero-title" style="margin-bottom:2px;">Olá, <span id="vend-nome-show"></span> 👋</h1>
-        <span class="acc-pill" id="vend-email-show"></span>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="logoutVendedor()">Sair</button>
-    </div>
-
-    <div class="vend-subnav" id="vend-subnav">
-      <button data-panel="pedidos" class="active">📋 Pedidos</button>
-      <button data-panel="cardapio">🍽️ Cardápio</button>
-      <button data-panel="categorias">🗂️ Categorias</button>
-      <button data-panel="motoqueiros">🏍️ Motoqueiros</button>
-      <button data-panel="adicionamentos">➕ Adicionamentos</button>
-      <button data-panel="pagamento">💳 Pagamento</button>
-      <button data-panel="mensagens">✉️ Mensagens</button>
-      <button data-panel="conta">👤 Minha conta</button>
-    </div>
-
-    <!-- PEDIDOS -->
-    <div class="vend-panel active" id="vend-panel-pedidos">
-      <div class="section-title">Pedidos</div>
-      <div id="vend-orders"></div>
-    </div>
-
-    <!-- CARDÁPIO -->
-    <div class="vend-panel" id="vend-panel-cardapio">
-      <div class="two-col">
-        <div>
-          <div class="section-title" id="mi-form-title">Adicionar item ao cardápio</div>
-          <div class="order-card">
-            <label class="field-label">Nome do item</label>
-            <input class="field" id="mi-nome" placeholder="Ex: Costela no bafo">
-            <label class="field-label">Categoria</label>
-            <select class="field" id="mi-categoria">
-              <option>Lanches</option><option>Pratos</option><option>Bebidas</option><option>Sobremesas</option>
-            </select>
-            <div id="mi-categoria-hint" style="font-size:.72rem;color:var(--cream-dim);margin:-8px 0 10px;">Gerencie as categorias na aba <strong style="color:var(--gold);">🗂️ Categorias</strong></div>
-            <label class="field-label">Preço (R$)</label>
-            <input class="field" id="mi-preco" type="number" step="0.01" placeholder="Ex: 32.90">
-            <label class="field-label">Descrição curta</label>
-            <input class="field" id="mi-desc" placeholder="Ex: Assada 8h no ponto de desmanchar">
-            <label class="field-label">Emoji <span style="color:var(--cream-dim);font-weight:400;">(usado se não houver foto)</span></label>
-            <input class="field" id="mi-emoji" placeholder="Ex: 🍖" value="🍽️">
-
-            <label class="field-label">Foto do produto — URL</label>
-            <input class="field" id="mi-imagem" placeholder="https://exemplo.com/foto.jpg" oninput="onMiImageUrlInput()">
-            <label class="field-label">Ou envie um arquivo <span style="color:var(--cream-dim);font-weight:400;">(PNG ou JPG)</span></label>
-            <input class="field" id="mi-imagem-file" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" onchange="onMiImageFile(event)">
-            <div class="auth-error" id="mi-imagem-error"></div>
-            <div id="mi-imagem-preview" style="display:none;margin:-6px 0 14px;">
-              <img src="" id="mi-imagem-preview-img" style="width:100%;height:130px;object-fit:cover;border-radius:10px;border:1px solid var(--line);">
-              <button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="clearMiImage()">Remover imagem</button>
-            </div>
-
-            <div class="small-note">Os adicionamentos (com cebola, sem gelo, etc.) desse item são definidos automaticamente pela categoria — gerencie-os na aba "➕ Adicionamentos".</div>
-
-            <button class="btn btn-add" style="width:100%;" id="mi-submit-btn" onclick="submitMenuItem()">Adicionar ao cardápio</button>
-            <button class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;" id="mi-cancel-btn" onclick="cancelEditItem()">Cancelar edição</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-title">Itens cadastrados <button class="btn btn-ghost btn-sm" onclick="resetMenuToDefaults()">🔄 Restaurar cardápio de exemplo</button></div>
-          <div id="mi-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CATEGORIAS -->
-    <div class="vend-panel" id="vend-panel-categorias">
-      <div class="panel-hero">
-        <div class="ph-icon">🗂️</div>
-        <div class="ph-text">
-          <div class="eyebrow">Cardápio</div>
-          <h2>Gerenciar categorias</h2>
-        </div>
-      </div>
-      <p class="hero-sub">Crie, renomeie ou exclua as categorias do cardápio. As mudanças ficam salvas e refletem automaticamente em todo o sistema.</p>
-      <div class="two-col">
-        <div>
-          <div class="order-card">
-            <div class="section-title" id="cat-form-title" style="font-size:1rem;margin-bottom:14px;">Nova categoria</div>
-            <label class="field-label">🏷️ Nome da categoria</label>
-            <input class="field" id="cat-nome" placeholder="Ex: Petiscos, Marmitas..." oninput="clearErr('cat-error')">
-            <div class="auth-error" id="cat-error"></div>
-            <button class="btn btn-gold" style="width:100%;" id="cat-submit-btn" onclick="submitCategoria()">+ Salvar categoria</button>
-            <button class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;" id="cat-cancel-btn" onclick="cancelEditCategoria()">Cancelar edição</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-title" style="font-size:1rem;">Categorias cadastradas <button class="btn btn-ghost btn-sm" onclick="resetCategoriasToDefaults()">🔄 Restaurar padrão</button></div>
-          <div id="cat-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MOTOQUEIROS -->
-    <div class="vend-panel" id="vend-panel-motoqueiros">
-      <div class="two-col">
-        <div>
-          <div class="section-title">Motoqueiros cadastrados</div>
-          <div id="moto-acc-list"></div>
-        </div>
-        <div>
-          <div class="section-title">Cadastrar motoqueiro</div>
-          <div class="order-card">
-            <label class="field-label">Nome</label>
-            <input class="field" id="nm-nome" placeholder="Nome completo" oninput="clearErr('nm-error')">
-            <label class="field-label">E-mail</label>
-            <input class="field" id="nm-email" placeholder="email@exemplo.com" oninput="clearErr('nm-error')">
-            <label class="field-label">Senha inicial</label>
-            <input class="field" id="nm-senha" type="password" placeholder="Defina uma senha inicial" oninput="clearErr('nm-error')">
-            <div class="auth-error" id="nm-error"></div>
-            <button class="btn btn-add" style="width:100%;" onclick="createMotoAccount()">Cadastrar motoqueiro</button>
-            <p class="small-note" style="margin-top:12px;">O motoqueiro usa esse e-mail e senha para entrar. Ele pode trocar a senha depois pela opção "Esqueci minha senha".</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ADICIONAMENTOS -->
-    <div class="vend-panel" id="vend-panel-adicionamentos">
-      <div class="panel-hero">
-        <div class="ph-icon">➕</div>
-        <div class="ph-text">
-          <div class="eyebrow">Complementos do cardápio</div>
-          <h2>Biblioteca de adicionamentos</h2>
-        </div>
-      </div>
-      <p class="hero-sub">Cadastre aqui as opções que se repetem entre os produtos (ex: sem cebola, bacon extra). Defina a categoria de produto em que cada uma se aplica e, se for o caso, um valor extra. Elas ficam disponíveis para marcar rapidamente ao criar ou editar qualquer item do cardápio.</p>
-      <div class="two-col">
-        <div>
-          <div class="order-card">
-            <div class="section-title" id="addon-form-title" style="font-size:1rem;margin-bottom:14px;">Novo adicionamento</div>
-            <label class="field-label">🏷️ Nome do adicionamento</label>
-            <input class="field" id="addon-nome" placeholder="Ex: Bacon extra">
-            <label class="field-label">📂 Categoria do produto</label>
-            <select class="field" id="addon-categoria">
-              <option>Todas</option><option>Lanches</option><option>Pratos</option><option>Bebidas</option><option>Sobremesas</option>
-            </select>
-            <label class="field-label">💰 Valor (R$) <span style="color:var(--cream-dim);font-weight:400;">(0 se for gratuito)</span></label>
-            <input class="field" id="addon-valor" type="number" step="0.01" placeholder="Ex: 5.00" value="0">
-            <button class="btn btn-gold" style="width:100%;" id="addon-submit-btn" onclick="addAddonToLibrary()">+ Adicionar à biblioteca</button>
-            <button class="btn btn-ghost" style="width:100%;margin-top:8px;display:none;" id="addon-cancel-btn" onclick="cancelEditAddon()">Cancelar edição</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-title" style="font-size:1rem;">Adicionamentos cadastrados <button class="btn btn-ghost btn-sm" onclick="resetAddonsToDefaults()">🔄 Restaurar padrão</button></div>
-          <div id="addon-library-list"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- MENSAGENS -->
-    <!-- PAGAMENTO -->
-    <div class="vend-panel" id="vend-panel-pagamento">
-      <div class="panel-hero">
-        <div class="ph-icon">💳</div>
-        <div class="ph-text">
-          <div class="eyebrow">Formas de pagamento</div>
-          <h2>Configurar Pix e cartão</h2>
-        </div>
-      </div>
-      <p class="hero-sub">O que você definir aqui aparece pro cliente na hora de fechar o pedido e na tela de acompanhamento.</p>
-      <div class="order-card" style="max-width:520px;">
-        <label class="field-label">🔑 Chave Pix</label>
-        <input class="field" id="pay-pix-input" placeholder="Ex: seurestaurante@pagamento.com">
-        <label class="field-label">💳 Mensagem exibida para pagamento no cartão</label>
-        <input class="field" id="pay-cartao-input" placeholder="Ex: Pagamento na maquininha, na hora da entrega.">
-        <div class="auth-error" id="pay-config-error"></div>
-        <button class="btn btn-add" style="width:100%;" onclick="salvarPaymentConfig()">Salvar formas de pagamento</button>
-      </div>
-    </div>
-
-    <div class="vend-panel" id="vend-panel-mensagens">
-      <div class="section-title">E-mail principal do restaurante</div>
-      <p class="hero-sub">Esse é o endereço usado como remetente nas mensagens de recuperação de senha enviadas para vendedores e motoqueiros.</p>
-      <div class="order-card" style="max-width:480px;">
-        <label class="field-label">E-mail principal (remetente)</label>
-        <input class="field" id="email-principal-input" placeholder="contato@seurestaurante.com" oninput="clearErr('email-principal-error')">
-        <div class="auth-error" id="email-principal-error"></div>
-        <button class="btn btn-add" style="width:100%;" onclick="saveEmailPrincipal()">Salvar e-mail principal</button>
-      </div>
-
-      <div class="section-title" style="margin-top:26px;">Caixa de mensagens enviadas</div>
-      <p class="hero-sub">Como este site não tem servidor de e-mail próprio, toda vez que alguém usa "Esqueci minha senha", a mensagem que seria enviada fica registrada aqui.</p>
-      <div id="email-log-list"></div>
-    </div>
-
-    <!-- CONTA -->
-    <div class="vend-panel" id="vend-panel-conta">
-      <div class="panel-hero">
-        <div class="ph-icon">👤</div>
-        <div class="ph-text">
-          <div class="eyebrow">Gestão de acesso</div>
-          <h2>Conta do vendedor</h2>
-        </div>
-      </div>
-
-      <div class="profile-card">
-        <div class="profile-avatar" id="profile-avatar" data-letter="V" aria-hidden="true"></div>
-        <div>
-          <div class="profile-name" id="profile-nome-show"></div>
-          <div class="profile-email" id="profile-email-show"></div>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="section-title">✏️ Editar minha conta</div>
-          <div class="order-card">
-            <label class="field-label">📧 E-mail</label>
-            <input class="field" id="ev-email" placeholder="email@exemplo.com" oninput="clearErr('ev-error')">
-            <label class="field-label">🔑 Nova senha</label>
-            <input class="field" id="ev-senha" type="password" placeholder="Deixe em branco para manter a atual" oninput="clearErr('ev-error')">
-            <div class="auth-error" id="ev-error"></div>
-            <button class="btn btn-add" style="width:100%;" onclick="saveEditVendAccount()">Salvar alterações</button>
-          </div>
-        </div>
-        <div>
-          <div class="section-title">➕ Adicionar outra conta de vendedor</div>
-          <div class="order-card">
-            <label class="field-label">👤 Nome</label>
-            <input class="field" id="nv-nome" placeholder="Nome completo" oninput="clearErr('nv-error')">
-            <label class="field-label">📧 E-mail</label>
-            <input class="field" id="nv-email" placeholder="email@exemplo.com" oninput="clearErr('nv-error')">
-            <label class="field-label">🔑 Senha inicial</label>
-            <input class="field" id="nv-senha" type="password" placeholder="Defina uma senha inicial" oninput="clearErr('nv-error')">
-            <div class="auth-error" id="nv-error"></div>
-            <button class="btn btn-add" style="width:100%;" onclick="createVendAccount()">Criar conta</button>
-          </div>
-          <div class="section-title" style="margin-top:22px;">Contas de vendedor</div>
-          <div id="vend-acc-list"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ============ MOTOQUEIRO ============ -->
-<div class="view" id="view-motoqueiro">
-  <div id="moto-auth"></div>
-
-  <div id="moto-app" style="display:none;">
-    <div class="vend-header-row">
-      <div>
-        <div class="eyebrow">Painel do motoqueiro</div>
-        <h1 class="hero-title" style="margin-bottom:2px;">Fala, <span id="moto-nome-show"></span> 🛵</h1>
-        <span class="acc-pill" id="moto-email-show"></span>
-      </div>
-      <button class="btn btn-ghost btn-sm" onclick="logoutMoto()">Sair</button>
-    </div>
-
-    <div class="vend-subnav" id="moto-subnav">
-      <button data-panel="entregas" class="active">🛵 Entregas</button>
-      <button data-panel="conta">👤 Minha conta</button>
-    </div>
-
-    <!-- ENTREGAS -->
-    <div class="moto-panel active" id="moto-panel-entregas">
-      <div class="section-title">Disponíveis para entrega</div>
-      <div id="moto-disponiveis"></div>
-      <div class="section-title" style="margin-top:26px;">Minhas entregas</div>
-      <div id="moto-minhas"></div>
-    </div>
-
-    <!-- CONTA -->
-    <div class="moto-panel" id="moto-panel-conta" style="display:none;">
-      <div class="panel-hero">
-        <div class="ph-icon">👤</div>
-        <div class="ph-text">
-          <div class="eyebrow">Gestão de acesso</div>
-          <h2>Minha conta</h2>
-        </div>
-      </div>
-
-      <div class="two-col">
-        <div>
-          <div class="section-title">✏️ Editar minha conta</div>
-          <div class="order-card">
-            <label class="field-label">📧 E-mail</label>
-            <input class="field" id="em-email" placeholder="email@exemplo.com" oninput="clearErr('em-error')">
-            <label class="field-label">🔑 Nova senha</label>
-            <input class="field" id="em-senha" type="password" placeholder="Deixe em branco para manter a atual" oninput="clearErr('em-error')">
-            <div class="auth-error" id="em-error"></div>
-            <button class="btn btn-add" style="width:100%;" onclick="saveEditMotoAccount()">Salvar alterações</button>
-          </div>
-
-          <div class="section-title" style="margin-top:22px;color:var(--red);">⚠️ Excluir conta</div>
-          <div class="order-card danger-zone">
-            <p class="hero-sub" style="margin-bottom:14px;">Isso remove permanentemente sua conta de motoqueiro. Não é possível desfazer.</p>
-            <button class="btn btn-red" style="width:100%;" onclick="excluirMinhaContaMotoqueiro()">🗑️ Excluir minha conta permanentemente</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-<script src="js/api.js"></script>
-<script src="js/app.js"></script>
-</body>
+ </body>
 </html>
